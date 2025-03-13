@@ -6,3 +6,83 @@ get metrics used to evaluate
 
 -Bank Stocks
 Chase, Bank of America, Amex, Capital One, Discover
+
+import yfinance as yf
+import pandas as pd
+import requests
+
+def get_bank_stock_metrics(ticker, cik):
+    """
+    Fetches key financial metrics for a given bank stock, including NPL ratio from SEC XBRL API.
+    """
+    stock = yf.Ticker(ticker)
+    financials = stock.financials
+    balance_sheet = stock.balance_sheet
+    info = stock.info
+    
+    # Fetch NPL Ratio from SEC XBRL API
+    npl_ratio = get_npl_ratio(cik)
+    
+    metrics = {
+        "Ticker": ticker,
+        "Current Price": info.get("currentPrice"),
+        "P/E Ratio": info.get("trailingPE"),
+        "P/B Ratio": info.get("priceToBook"),
+        "Dividend Yield": info.get("dividendYield"),
+        "ROE": info.get("returnOnEquity"),
+        "ROA": info.get("returnOnAssets"),
+        "Net Interest Margin": info.get("netMargins"),
+        "EPS": info.get("trailingEps"),
+        "Debt/Equity Ratio": info.get("debtToEquity"),
+        "Loan/Deposit Ratio": balance_sheet.loc["Total Debt"].iloc[0] / balance_sheet.loc["Total Assets"].iloc[0] if "Total Debt" in balance_sheet.index and "Total Assets" in balance_sheet.index else None,
+        "Efficiency Ratio": financials.loc["Total Operating Expenses"].iloc[0] / financials.loc["Total Revenue"].iloc[0] if "Total Operating Expenses" in financials.index and "Total Revenue" in financials.index else None,
+        "Revenue Growth": info.get("revenueGrowth"),
+        "EPS Growth": info.get("earningsGrowth"),
+        "Book Value Per Share Growth": info.get("bookValue"),
+        "Non-Performing Loan Ratio": npl_ratio,
+        "Beta": info.get("beta"),
+        "Interest Rate Sensitivity": None  # Custom metric, needs additional data
+    }
+    return metrics
+
+def get_npl_ratio(cik):
+    """
+    Fetches Non-Performing Loan (NPL) Ratio using SEC XBRL API.
+    """
+    base_url = f"https://data.sec.gov/api/xbrl/companyconcept/CIK{cik}/us-gaap/"
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    npl_url = base_url + "NonperformingLoans.json"
+    total_loans_url = base_url + "LoansReceivableGross.json"
+
+    try:
+        npl_response = requests.get(npl_url, headers=headers).json()
+        total_loans_response = requests.get(total_loans_url, headers=headers).json()
+
+        npl = npl_response.get("units", {}).get("USD", [{}])[-1].get("val", None)
+        total_loans = total_loans_response.get("units", {}).get("USD", [{}])[-1].get("val", None)
+
+        if npl is not None and total_loans is not None and total_loans > 0:
+            return (npl / total_loans) * 100
+    except Exception as e:
+        print(f"Error fetching NPL data for CIK {cik}: {e}")
+    return None
+
+def main():
+    bank_tickers_cik = {
+        "JPM": "0000019617",
+        "BAC": "0000070858",
+        "C": "0000831001",
+        "WFC": "0000072971",
+        "GS": "0000886982",
+        "MS": "0000895421"
+    }
+    
+    bank_metrics = [get_bank_stock_metrics(ticker, cik) for ticker, cik in bank_tickers_cik.items()]
+    
+    df = pd.DataFrame(bank_metrics)
+    print(df)
+    df.to_csv("bank_stock_metrics.csv", index=False)
+    
+if __name__ == "__main__":
+    main()
