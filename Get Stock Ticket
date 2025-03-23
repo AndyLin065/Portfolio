@@ -4,6 +4,15 @@ covered calls with stable companies
 
 live data fornoptions trading may be hard to get
 
+1. get stock price one time daily
+2. gather evaluation metrics
+    -value of company
+    - EPS
+    -....
+3. calc and sort top % for growth
+4. buy stock by setting price targets
+
+
 ## Get stock tickers
 
 get metrics used to evaluate
