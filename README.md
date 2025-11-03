@@ -5,4 +5,5 @@ Hello World!
 
 This repository shows personal projects related to my professional skill sets.
 
+-Crypto API
 -Financial Stocks Data Extraction
