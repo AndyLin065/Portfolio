@@ -64,3 +64,99 @@ plt.xlabel('Importance')
 plt.title('Top 10 Feature Importance')
 plt.gca().invert_yaxis()
 plt.show()
+
+
+import seaborn as sns
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score, confusion_matrix
+
+# Exploratory Data Analysis (new cell)
+
+sns.set(style="whitegrid")
+
+# Basic summaries
+print("Shapes:")
+print(f"X: {X.shape}, X_train: {X_train.shape}, X_test: {X_test.shape}")
+print(f"y: {y.shape}, y_train: {y_train.shape}, y_test: {y_test.shape}\n")
+
+print("Class distribution (full dataset):")
+print(y.value_counts().to_frame("count"))
+print("\nClass distribution (train):")
+print(y_train.value_counts().to_frame("count"))
+print("\nMissing values (per column, full dataset):")
+print(X.isnull().sum())
+
+print("\nNumeric summary (top 10 features by importance):")
+top10 = feature_importance['feature'].tolist()[:10]
+print(X[top10].describe().T)
+
+# Create joined dataframes for class-based plots
+df = X.join(y)
+df_train = X_train.join(y_train)
+
+# 1) Feature importance (already computed) — plot top 10
+plt.figure(figsize=(8, 5))
+sns.barplot(x='importance', y='feature', data=feature_importance.head(10))
+plt.title("Top 10 Feature Importances")
+plt.tight_layout()
+plt.show()
+
+# 2) Distribution plots for top features
+n = min(6, len(top10))
+fig, axes = plt.subplots(n, 2, figsize=(12, 3 * n))
+for i, feat in enumerate(top10[:n]):
+    ax_hist = axes[i, 0]
+    ax_box = axes[i, 1]
+    sns.histplot(df[feat], kde=True, ax=ax_hist, bins=40)
+    ax_hist.set_title(f"Distribution: {feat}")
+    sns.boxplot(x=y, y=X[feat], ax=ax_box)
+    ax_box.set_title(f"Boxplot by class: {feat}")
+plt.tight_layout()
+plt.show()
+
+# 3) Correlation matrix for top 10 features
+corr = X[top10].corr()
+plt.figure(figsize=(9, 7))
+sns.heatmap(corr, annot=True, fmt=".2f", cmap="vlag", center=0)
+plt.title("Correlation (Top 10 Important Features)")
+plt.tight_layout()
+plt.show()
+
+# 4) Pairplot for top 4 features (sampled to keep it fast)
+pair_feats = top10[:4]
+sample = df.sample(min(1000, len(df)), random_state=42)
+sns.pairplot(sample, vars=pair_feats, hue='is_fraud', plot_kws={'alpha': 0.6, 's': 20})
+plt.suptitle("Pairplot (sampled)", y=1.02)
+plt.show()
+
+# 5) Model evaluation visuals: ROC and Precision-Recall (on X_test / y_test)
+fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
+roc_auc = auc(fpr, tpr)
+precision, recall, _ = precision_recall_curve(y_test, y_pred_proba)
+avg_precision = average_precision_score(y_test, y_pred_proba)
+
+fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+ax[0].plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
+ax[0].plot([0, 1], [0, 1], 'k--', alpha=0.6)
+ax[0].set_xlabel("False Positive Rate")
+ax[0].set_ylabel("True Positive Rate")
+ax[0].set_title("ROC Curve")
+ax[0].legend()
+
+ax[1].step(recall, precision, where='post', label=f"AP = {avg_precision:.3f}")
+ax[1].set_xlabel("Recall")
+ax[1].set_ylabel("Precision")
+ax[1].set_title("Precision-Recall Curve")
+ax[1].legend()
+
+plt.tight_layout()
+plt.show()
+
+# 6) Confusion matrix on test set
+cm = confusion_matrix(y_test, y_pred)
+plt.figure(figsize=(5, 4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix (Test)")
+plt.tight_layout()
+plt.show()
