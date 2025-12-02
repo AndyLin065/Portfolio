@@ -6,6 +6,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+# EDA
+import seaborn as sns
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score, confusion_matrix
+
 # Dataset: Credit Card Fraud Detection
 # Download from: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
 # Alternative: Use sklearn's make_classification for demo
@@ -66,8 +70,7 @@ plt.gca().invert_yaxis()
 plt.show()
 
 
-import seaborn as sns
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score, confusion_matrix
+
 
 # Exploratory Data Analysis (new cell)
 
