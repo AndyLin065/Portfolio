@@ -10,6 +10,8 @@ import numpy as np
 
 from sklearn.datasets import fetch_california_housing
 
+#Add EDA here
+
 # Load data
 housing = fetch_california_housing()
 X = pd.DataFrame(housing.data, columns=housing.feature_names)
